@@ -1,0 +1,165 @@
+--Creating prescriptions file
+CREATE TABLE project.dbo.prescriptions (
+    subject_id BIGINT NULL,
+    hadm_id BIGINT NULL,
+    pharmacy_id BIGINT NULL,
+    poe_id NVARCHAR(100) NULL,              
+    starttime DATETIME NULL,
+    stoptime DATETIME NULL,
+    medication NVARCHAR(255) NULL,          
+    proc_type NVARCHAR(50) NULL,
+    status NVARCHAR(50) NULL,
+    entertime DATETIME NULL,
+    verifiedtime DATETIME NULL,
+    route NVARCHAR(50) NULL,
+    frequency NVARCHAR(100) NULL,
+    disp_sched NVARCHAR(100) NULL,
+    infusion_type NVARCHAR(50) NULL,
+    sliding_scale NVARCHAR(50) NULL,
+    lockout_interval NVARCHAR(50) NULL,
+    basal_rate NVARCHAR(50) NULL,
+    one_hr_max NVARCHAR(50) NULL,
+    doses_per_24_hrs NVARCHAR(50) NULL,
+    duration NVARCHAR(50) NULL,
+    duration_interval NVARCHAR(50) NULL,
+    expiration_value NVARCHAR(50) NULL,
+    expiration_unit NVARCHAR(50) NULL,
+    expirationdate DATETIME NULL,
+    dispensation NVARCHAR(50) NULL,
+    fill_quantity NVARCHAR(50) NULL
+);
+
+
+
+BULK INSERT project.dbo.prescriptions
+FROM 'C:\Users\NOEL GRACESON\Downloads\prescriptions.csv'
+WITH (
+    FIRSTROW = 2,                  
+    FIELDTERMINATOR = ',',         
+    ROWTERMINATOR = '\n',          
+    TABLOCK,
+    CODEPAGE = '65001',            
+    MAXERRORS = 1000               
+);
+
+
+--creating labevents
+CREATE TABLE project.dbo.labevents (
+    subject_id BIGINT NULL,
+    hadm_id BIGINT NULL,
+    pharmacy_id BIGINT NULL,
+    poe_id NVARCHAR(100) NULL,
+    starttime DATETIME NULL,
+    stoptime DATETIME NULL,
+    drug NVARCHAR(MAX) NULL,           
+    prod_strength NVARCHAR(MAX) NULL,  
+    dose_val_rx NVARCHAR(255) NULL,
+    dose_unit_rx NVARCHAR(50) NULL,
+    form_val_disp NVARCHAR(255) NULL,
+    route NVARCHAR(100) NULL,
+    comments NVARCHAR(MAX) NULL        
+);
+
+BULK INSERT project.dbo.labevents
+FROM 'C:\Users\NOEL GRACESON\Downloads\labevents.csv'
+WITH (
+    FIRSTROW = 2,
+    FIELDTERMINATOR = ',',
+    ROWTERMINATOR = '\n',
+    TABLOCK,
+    CODEPAGE = '65001'  
+);
+
+--Filtering based on asthma icd codes
+
+WITH asthma_patients AS (
+    SELECT DISTINCT subject_id, hadm_id, icd_code
+    FROM [project].[dbo].[diagnoses_icd]
+    WHERE icd_code IN (
+        '49300','49301','49302',
+        '49310','49311','49312',
+        '49320','49321','49322',
+        '49381','49382',
+        '49390','49391','49392',
+        'J45','J452','J4520','J4521','J4522',
+        'J453','J4530','J4531','J4532',
+        'J454','J4540','J4541','J4542',
+        'J455','J4550','J4551','J4552',
+        'J459','J4590','J45901','J45902','J45909',
+        'J4599','J45990','J45991','J45998',
+        'J8283'
+    )
+)
+
+--Asthma patients admission information
+SELECT 
+    a.subject_id,
+    a.hadm_id,
+	a.icd_code,
+    ad.admission_type,
+    ad.discharge_location,
+	ad.admittime,
+	ad.dischtime,
+    ad.race,
+    ROUND(DATEDIFF(MINUTE, ad.admittime, ad.dischtime) / 1440.0, 1) AS length_of_stay_days
+FROM asthma_patients a
+INNER JOIN [project].[dbo].[admissions] ad
+    ON a.subject_id = ad.subject_id 
+    AND a.hadm_id = ad.hadm_id
+ORDER BY a.subject_id;
+
+--Filtering patinet demographics based on asthma
+SELECT 
+    a.subject_id,
+	p.gender,
+	p.anchor_age,
+	p.anchor_year_group,
+	a.icd_code,
+	CASE 
+        WHEN p.dod IS NOT NULL THEN 'Yes'
+        ELSE 'NULL'
+    END AS deceased_status
+FROM asthma_patients a
+INNER JOIN [project].[dbo].[patients] p
+    ON a.subject_id = p.subject_id
+ORDER BY a.subject_id;
+ 
+--filtering to labevents of asthma patients(abonormal)
+
+SELECT 
+a.subject_id,
+a.icd_code,
+l.itemid,
+l.charttime,
+l.valuenum as value,
+l.valueuom,
+ref_range_lower,
+l.ref_range_upper,
+l.flag,
+l.priority
+  FROM asthma_patients a
+INNER JOIN [project].[dbo].[labevents] l
+    ON a.subject_id = l.subject_id
+	where l.flag= 'abnormal'
+ORDER BY a.subject_id;
+
+--filtering the prescriptions based of asthma patients
+
+SELECT 
+a.subject_id,
+a.icd_code,
+p.starttime,
+p.drug_type,
+p.drug,
+p.prod_strength,
+p.dose_val_rx,
+p.dose_unit_rx,
+p.doses_per_24_hrs,
+p.route
+  FROM asthma_patients a
+INNER JOIN [project].[dbo].[prescriptions] p 
+    ON a.subject_id = p.subject_id
+ORDER BY a.subject_id;
+
+
+

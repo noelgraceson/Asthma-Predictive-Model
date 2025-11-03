@@ -161,5 +161,80 @@ INNER JOIN [project].[dbo].[prescriptions] p
     ON a.subject_id = p.subject_id
 ORDER BY a.subject_id;
 
+--distict patint ID by gender and descesed 
 
+WITH asthma_patients AS (
+    SELECT DISTINCT subject_id, hadm_id, icd_code
+    FROM [project].[dbo].[diagnoses_icd]
+    WHERE icd_code IN (
+        '49300','49301','49302',
+        '49310','49311','49312',
+        '49320','49321','49322',
+        '49381','49382',
+        '49390','49391','49392',
+        'J45','J452','J4520','J4521','J4522',
+        'J453','J4530','J4531','J4532',
+        'J454','J4540','J4541','J4542',
+        'J455','J4550','J4551','J4552',
+        'J459','J4590','J45901','J45902','J45909',
+        'J4599','J45990','J45991','J45998',
+        'J8283'
+    )
+)
 
+SELECT 
+    p.gender,
+    COUNT(DISTINCT p.subject_id) AS total_patients,
+    AVG(p.anchor_age) AS average_age,
+    COUNT(DISTINCT CASE WHEN p.dod IS NOT NULL THEN p.subject_id END) AS total_deceased
+FROM [project].[dbo].[patients] p
+JOIN asthma_patients a 
+    ON p.subject_id = a.subject_id
+GROUP BY p.gender;
+
+--drug mostly used and the number of prescriptions
+
+WITH asthma_patients AS (
+    SELECT DISTINCT subject_id, hadm_id, icd_code
+    FROM [project].[dbo].[diagnoses_icd]
+    WHERE icd_code IN (
+        '49300','49301','49302',
+        '49310','49311','49312',
+        '49320','49321','49322',
+        '49381','49382',
+        '49390','49391','49392',
+        'J45','J452','J4520','J4521','J4522',
+        'J453','J4530','J4531','J4532',
+        'J454','J4540','J4541','J4542',
+        'J455','J4550','J4551','J4552',
+        'J459','J4590','J45901','J45902','J45909',
+        'J4599','J45990','J45991','J45998',
+        'J8283'
+    )
+)
+
+SELECT 
+    p.drug,
+    COUNT(*) AS total_prescriptions,
+    COUNT(DISTINCT p.subject_id) AS distinct_patients,
+    AVG(TRY_CAST(p.dose_val_rx AS FLOAT)) AS avg_dose_value,
+    MAX(p.prod_strength) AS max_strength,
+    p.route
+FROM [project].[dbo].[prescriptions] p
+INNER JOIN asthma_patients a 
+    ON a.subject_id = p.subject_id
+WHERE p.drug IS NOT NULL
+GROUP BY p.drug, p.route
+ORDER BY total_prescriptions DESC;
+
+--patient with most number of prescriptions
+SELECT 
+    p.subject_id,
+    COUNT(*) AS total_prescriptions,
+    COUNT(DISTINCT p.drug) AS distinct_drugs,
+FROM [project].[dbo].[prescriptions] p
+INNER JOIN asthma_patients a 
+    ON a.subject_id = p.subject_id
+WHERE p.drug IS NOT NULL
+GROUP BY p.subject_id
+ORDER BY total_prescriptions DESC;

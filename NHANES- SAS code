@@ -1,0 +1,19 @@
+libname xptfile xport "/home/u64294097/DEMO_L3.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+--converting xpt file to csv
+libname xptfile xport "/home/u64294097/DEMO_L3.xpt";
+
+libname out "/home/u64294097/";
+
+data out.demographics;
+    set xptfile.DEMO_L;
+run;
+
+proc export data=out.demographics
+    outfile="/home/u64294097/DEMO_L.csv"
+    dbms=csv
+    replace;
+run;

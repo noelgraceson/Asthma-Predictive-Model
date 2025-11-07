@@ -109,20 +109,37 @@ INNER JOIN [project].[dbo].[admissions] ad
 ORDER BY a.subject_id;
 
 --Filtering patinet demographics based on asthma
+WITH ranked_admissions AS (
+    SELECT 
+        d.subject_id,
+        d.hadm_id,
+        d.icd_code,
+        ROW_NUMBER() OVER (PARTITION BY d.subject_id ORDER BY hadm_id DESC) AS rn
+    FROM [project].[dbo].[diagnoses_icd] d
+    WHERE icd_code IN (
+        '49300','49301','49302', '49310','49311','49312',
+        '49320','49321','49322', '49381','49382',
+        '49390','49391','49392', 'J45','J452','J4520','J4521','J4522',
+        'J453','J4530','J4531','J4532', 'J454','J4540','J4541','J4542',
+        'J455','J4550','J4551','J4552', 'J459','J4590','J45901','J45902','J45909',
+        'J4599','J45990','J45991','J45998','J8283'
+    )
+)
 SELECT 
-    a.subject_id,
-	p.gender,
-	p.anchor_age,
-	p.anchor_year_group,
-	a.icd_code,
-	CASE 
+    r.subject_id,
+    p.gender,
+    p.anchor_age,
+    p.anchor_year_group,
+    r.icd_code,
+    CASE 
         WHEN p.dod IS NOT NULL THEN 'Yes'
-        ELSE 'NULL'
+        ELSE 'No'
     END AS deceased_status
-FROM asthma_patients a
-INNER JOIN [project].[dbo].[patients] p
-    ON a.subject_id = p.subject_id
-ORDER BY a.subject_id;
+FROM ranked_admissions r
+JOIN [project].[dbo].[patients] p
+    ON r.subject_id = p.subject_id
+WHERE r.rn = 1   
+ORDER BY r.subject_id; 
  
 --filtering to labevents of asthma patients(abonormal)
 
@@ -238,3 +255,14 @@ INNER JOIN asthma_patients a
 WHERE p.drug IS NOT NULL
 GROUP BY p.subject_id
 ORDER BY total_prescriptions DESC;
+
+--count according to race
+SELECT 
+    ad.race,
+    COUNT(DISTINCT a.subject_id) AS total_distinct_patients
+FROM asthma_patients a
+INNER JOIN [project].[dbo].[admissions] ad
+    ON a.subject_id = ad.subject_id
+WHERE ad.race IS NOT NULL 
+GROUP BY ad.race
+ORDER BY total_distinct_patients DESC;

@@ -17,3 +17,213 @@ proc export data=out.demographics
     dbms=csv
     replace;
 run;
+
+/* converting BMI XPT to csv */
+libname xptfile xport "/home/u64294097/EPG1V2/activities/BMX_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/EPG1V2/activities/BMX_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.bmx;
+    set XPTFILE.BMX_L;
+run;
+
+
+proc export data=out.bmx
+    outfile="/home/u64294097/BMX.csv"
+    dbms=csv
+    replace;
+run;
+
+
+
+/* converting Dietry XPT to csv */
+libname xptfile xport "/home/u64294097/EPG1V2/DSQIDS_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/EPG1V2/DSQIDS_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.dsqids;
+    set XPTFILE.DSQIDS_L;
+run;
+
+
+proc export data=out.dsqids
+    outfile="/home/u64294097/DSQIDS.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting  Occupation XPT to csv */
+libname xptfile xport "/home/u64294097/OCQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/OCQ_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.ocq_l;
+    set XPTFILE.OCQ_L;
+run;
+
+
+proc export data=out.dsqids
+    outfile="/home/u64294097/OCQ_L.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting  Occupation XPT to csv */
+libname xptfile xport "/home/u64294097/OCQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/OCQ_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.ocq_l;
+    set XPTFILE.OCQ_L;
+run;
+
+
+proc export data=out.dsqids
+    outfile="/home/u64294097/OCQ_L.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting  pesticide XPT to csv */
+libname xptfile xport "/home/u64294097/PUQMEC_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/PUQMEC_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.puqmec_l;
+    set XPTFILE.PUQMEC_L;
+run;
+
+
+proc export data=out.puqmec_l
+    outfile="/home/u64294097/pesticide.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting  physical_activity XPT to csv */
+libname xptfile xport "/home/u64294097/PAQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/PAQ_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.paq_l;
+    set XPTFILE.PAQ_L;
+run;
+
+
+proc export data=out.paq_l
+    outfile="/home/u64294097/physical_activity.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting  Smoking XPT to csv */
+libname xptfile xport "/home/u64294097/SMQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+
+libname xptfile xport "/home/u64294097/SMQ_L.xpt";
+
+
+libname out "/home/u64294097/";
+
+
+data out.smq_l;
+    set XPTFILE.SMQ_L;
+run;
+
+
+proc export data=out.smq_l
+    outfile="/home/u64294097/smoking.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting Smoking elaborated XPT to csv */
+libname xptfile xport "/home/u64294097/EPG1V2/SMQRTU_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+libname xptfile xport "/home/u64294097/EPG1V2/SMQRTU_L.xpt";
+
+libname out "/home/u64294097/";
+
+data out.smqrtu_l;
+    set XPTFILE.SMQRTU_L;
+run;
+
+proc export data=out.smqrtu_l
+    outfile="/home/u64294097/smoking_tobacco_more.csv"
+    dbms=csv
+    replace;
+run;
+
+/* converting weight history XPT to csv */
+libname xptfile xport "/home/u64294097/EPG1V2/WHQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+libname xptfile xport "/home/u64294097/EPG1V2/WHQ_L.xpt";
+
+libname out "/home/u64294097/";
+
+data out.whq_l;
+    set XPTFILE.WHQ_L;
+run;
+
+proc export data=out.whq_l
+    outfile="/home/u64294097/weight_history.csv"
+    dbms=csv
+    replace;
+run;

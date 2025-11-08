@@ -227,3 +227,38 @@ proc export data=out.whq_l
     dbms=csv
     replace;
 run;
+
+/*coverting diabetes xpt to csv*/
+libname xptfile xport "/home/u64294097/EPG1V2/DIQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+libname xptfile xport "/home/u64294097/EPG1V2/DIQ_L.xpt";
+
+libname out "/home/u64294097/";
+
+data out.diabetes;
+    set XPTFILE.DIQ_L;
+run;
+
+proc export data=out.diabetes
+    outfile="/home/u64294097/diabetes.csv"
+    dbms=csv
+    replace;
+run;
+
+/*coverting BP and Cholestrol xpt to csv*/
+libname xptfile xport "/home/u64294097/EPG1V2/BPQ_L.xpt";
+proc contents data=xptfile._all_;
+run;
+libname xptfile xport "/home/u64294097/EPG1V2/BPQ_L.xpt";
+libname out "/home/u64294097/";
+data out.bpc;
+    set XPTFILE.BPQ_L;
+run;
+proc export data=out.bpc
+    outfile="/home/u64294097/blood_pressure_cholestrol.csv"
+    dbms=csv
+    replace;
+run;

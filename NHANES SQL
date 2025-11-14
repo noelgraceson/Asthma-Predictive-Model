@@ -1,0 +1,122 @@
+--blood pressure and cholestrol
+SELECT Patient_ID,
+case
+when BPQ030 = 1 then 'Yes'
+when BPQ030 = 2 then 'No'
+else 'invalid'
+end as Blood_pressure,
+case 
+when BPQ080 = 1 then 'Yes'
+when BPQ080= 2 then 'No'
+else 'invalid'
+end as Cholestrol
+  FROM [project].[dbo].[NHANES_blood_pressure_cholestrol];
+
+--BMI
+ SELECT 
+ Patient_ID,
+ ROUND(Weight_kg, 1) AS Weight_kg,
+ ROUND(Height_cm, 1) AS Height_cm,
+ROUND((Weight_kg / POWER(Height_cm / 100.0, 2)), 1) AS BMI
+FROM [project].[dbo].[NHANES_BMI];
+
+--Diabetes
+SELECT Patient_ID,
+case 
+when DIQ010= 1 then 'Yes'
+when DIQ010= 2 then 'No'
+else 'invalid'
+end as diabetes,
+case 
+when DIQ050= 1 then 'Yes'
+when DIQ050= 2 then 'No'
+else 'invalid'
+end as Taking_insulin,
+case
+When DID060 BETWEEN 1 AND 60 Then CONCAT(DID060, ' months')
+ When DID060 = 666 THEN '<1 month'
+        ELSE 'Invalid'
+    END AS Duration_taking_insulin
+  FROM [project].[dbo].[NHANES_diabetes];
+
+--pesticides
+  SELECT Patient_ID,
+case 
+when PUQ100= 1 then 'yes'
+when PUQ100= 2 then 'no'
+else 'invalid'
+end as Home_Use_pesticides,
+case 
+when PUQ110=1 then 'yes'
+when PUQ110= 2 then 'no'
+else 'invalid'
+end as Pesticides_for_weeds
+  FROM [project].[dbo].[NHANES_pesticide];
+
+  --physical activity
+
+  SELECT DISTINCT PAD790Q 
+FROM [project].[dbo].[NHANES_physical_activity]
+ORDER BY PAD790Q;
+
+SELECT 
+    Patient_ID,
+
+    CASE 
+        WHEN PAD790U = 'D' 
+            THEN ROUND(TRY_CONVERT(float, PAD790Q) * 30.5, 1)
+
+        WHEN PAD790U = 'W' 
+            THEN ROUND(TRY_CONVERT(float, PAD790Q) * 4.345, 1)
+
+        WHEN PAD790U = 'M' 
+            THEN ROUND(TRY_CONVERT(float, PAD790Q), 1)
+
+        WHEN PAD790U = 'Y' 
+            THEN ROUND(TRY_CONVERT(float, PAD790Q) / 12.0, 1)
+
+        ELSE null
+    END AS Exercise_per_Month
+
+FROM [project].[dbo].[NHANES_physical_activity];
+
+--smoking
+SELECT Patient_ID,
+case
+when SMQ040= 1 then 'daily'
+when SMQ040= 2 then 'some days'
+when SMQ040= 3 then 'no'
+else 'invalid'
+end as How_often_smoking,
+case 
+when SMD650 between 2 and 90 then SMD650
+when SMD650= 1 then '<1'
+when SMD650= 95 then '>95'
+else 'invalid'
+end as No_of_cigarettes_per_day
+
+  FROM [project].[dbo].[NHANES_smoking];
+
+--medications
+ SELECT SEQN as Patient_ID,
+case
+when MCQ010= 1 then 'yes'
+when MCQ010= 2 then 'no'
+else null
+end as Had_asthma,
+case 
+when MCQ035= 1 then 'yes'
+when MCQ035= 2 then 'no'
+else null
+end as Still_asthma,
+case 
+when MCQ040= 1 then 'yes'
+when MCQ040 = 2 then 'no'
+else null
+end as Asthma_attack_last_year,
+case 
+when AGQ030= 1 then 'yes'
+when AGQ030 = 2 then 'no'
+else null
+end as emergency_visit_for_asthma_past_year
+  FROM [project].[dbo].[NHANES_medications];

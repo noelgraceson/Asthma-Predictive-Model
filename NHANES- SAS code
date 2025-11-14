@@ -262,3 +262,23 @@ proc export data=out.bpc
     dbms=csv
     replace;
 run;
+
+/*coverting medications xpt to csv*/
+libname xptfile xport "/home/u64294097/EPG1V2/MCQ_L.xpt";
+
+proc contents data=xptfile._all_;
+run;
+
+libname xptfile xport "/home/u64294097/EPG1V2/MCQ_L.xpt";
+
+libname out "/home/u64294097/";
+
+data out.medications;
+    set XPTFILE.MCQ_L;
+run;
+
+proc export data=out.medications
+    outfile="/home/u64294097/medications.csv"
+    dbms=csv
+    replace;
+run;

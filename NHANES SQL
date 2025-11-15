@@ -120,3 +120,36 @@ when AGQ030 = 2 then 'no'
 else null
 end as emergency_visit_for_asthma_past_year
   FROM [project].[dbo].[NHANES_medications];
+
+--asthma and smoking
+WITH asthma_clean AS (
+    SELECT 
+        SEQN AS Patient_ID,
+        CASE
+            WHEN MCQ010 = 1 THEN 1        -- had asthma
+            WHEN MCQ010 = 2 THEN 0
+            ELSE NULL
+        END AS Asthma_numeric
+    FROM [project].[dbo].[NHANES_medications]
+),
+
+smoking_clean AS (
+    SELECT 
+        Patient_ID,
+        CASE
+            WHEN SMD650 = 1 THEN 0.5          -- <1 cigarette = approx 0.5
+            WHEN SMD650 BETWEEN 2 AND 5 THEN 3.5   -- 2–5 range midpoint
+            WHEN SMD650 BETWEEN 6 AND 96 THEN 7    -- >5
+            ELSE NULL
+        END AS Cigarettes_per_day_numeric
+    FROM [project].[dbo].[NHANES_smoking]
+)
+
+SELECT 
+    a.Patient_ID,
+    s.Cigarettes_per_day_numeric,
+    a.Asthma_numeric
+FROM asthma_clean a
+LEFT JOIN smoking_clean s
+    ON a.Patient_ID = s.Patient_ID
+ORDER BY a.Patient_ID;

@@ -89,9 +89,9 @@ when SMQ040= 3 then 'no'
 else 'invalid'
 end as How_often_smoking,
 case 
-when SMD650 between 2 and 90 then SMD650
 when SMD650= 1 then '<1'
-when SMD650= 95 then '>95'
+when SMD650 between 2 and 5 then '2-5'
+when SMD650 between 6 and 96 then '>5'
 else 'invalid'
 end as No_of_cigarettes_per_day
 

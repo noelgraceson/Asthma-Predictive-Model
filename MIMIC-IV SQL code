@@ -266,3 +266,46 @@ INNER JOIN [project].[dbo].[admissions] ad
 WHERE ad.race IS NOT NULL 
 GROUP BY ad.race
 ORDER BY total_distinct_patients DESC;
+
+--most number of stays
+WITH asthma_patients AS (
+    SELECT DISTINCT subject_id, hadm_id, icd_code
+    FROM [project].[dbo].[diagnoses_icd]
+    WHERE icd_code IN (
+        '49300','49301','49302',
+        '49310','49311','49312',
+        '49320','49321','49322',
+        '49381','49382',
+        '49390','49391','49392',
+        'J45','J452','J4520','J4521','J4522',
+        'J453','J4530','J4531','J4532',
+        'J454','J4540','J4541','J4542',
+        'J455','J4550','J4551','J4552',
+        'J459','J4590','J45901','J45902','J45909',
+        'J4599','J45990','J45991','J45998',
+        'J8283'
+    )
+),
+
+patient_admissions AS (
+    SELECT 
+        a.subject_id,
+        a.hadm_id,
+        a.icd_code,
+        ad.admittime,
+        ad.dischtime,
+        ROUND(DATEDIFF(MINUTE, ad.admittime, ad.dischtime) / 1440.0, 1) AS length_of_stay_days
+    FROM asthma_patients a
+    INNER JOIN [project].[dbo].[admissions] ad
+        ON a.subject_id = ad.subject_id 
+        AND a.hadm_id = ad.hadm_id
+)
+
+SELECT 
+    subject_id,
+    COUNT(hadm_id) AS total_admissions,
+    ROUND(SUM(length_of_stay_days), 1) AS total_length_of_stay_days,
+    ROUND(AVG(length_of_stay_days), 1) AS avg_length_of_stay_days
+FROM patient_admissions
+GROUP BY subject_id
+ORDER BY total_length_of_stay_days DESC;

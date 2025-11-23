@@ -1,0 +1,103 @@
+                                                                         MIMIC-IV
+
+
+WITH asthma_patients AS (
+    SELECT DISTINCT subject_id, hadm_id
+    FROM project.dbo.diagnoses_icd
+    WHERE icd_code IN (
+        '49300','49301','49302','49310','49311','49312',
+        '49320','49321','49322','49381','49382',
+        '49390','49391','49392','J45','J452','J4520','J4521','J4522',
+        'J453','J4530','J4531','J4532','J454','J4540','J4541','J4542',
+        'J455','J4550','J4551','J4552','J459','J4590','J45901','J45902',
+        'J45909','J4599','J45990','J45991','J45998','J8283'
+    )
+),
+
+---Demographics
+
+demo AS (
+    SELECT 
+        p.subject_id,
+        p.gender,
+        p.anchor_age,
+        CASE 
+            WHEN p.anchor_age < 15 THEN '0–15'
+            WHEN p.anchor_age BETWEEN 15 AND 30 THEN '15–30'
+            WHEN p.anchor_age BETWEEN 30 AND 45 THEN '30–45'
+            WHEN p.anchor_age BETWEEN 45 AND 60 THEN '45–60'
+            ELSE '>60'
+        END AS age_group,
+        CASE WHEN p.dod IS NOT NULL THEN 1 ELSE 0 END AS death_flag
+    FROM project.dbo.patients p
+),
+
+--- Admissions
+
+adm AS (
+    SELECT 
+        a.subject_id,
+        COUNT(a.hadm_id) AS total_admissions,
+        ROUND(SUM(DATEDIFF(MINUTE, ad.admittime, ad.dischtime) / 1440.0), 1) AS total_los_days,
+        ROUND(AVG(DATEDIFF(MINUTE, ad.admittime, ad.dischtime) / 1440.0), 1) AS avg_los_days,
+        MAX(ad.race) AS race
+    FROM asthma_patients a
+    JOIN project.dbo.admissions ad
+        ON a.subject_id = ad.subject_id AND a.hadm_id = ad.hadm_id
+    GROUP BY a.subject_id
+),
+
+---Medications – total prescription count
+
+meds AS (
+    SELECT 
+        a.subject_id,
+        COUNT(p.drug) AS total_prescriptions
+    FROM asthma_patients a
+    JOIN project.dbo.prescriptions p
+        ON a.subject_id = p.subject_id
+    GROUP BY a.subject_id
+),
+
+---Abnormal Labs
+
+abn_labs AS (
+    SELECT 
+        a.subject_id,
+        COUNT(*) AS abnormal_lab_count
+    FROM asthma_patients a
+    JOIN project.dbo.labevents l
+        ON a.subject_id = l.subject_id
+    WHERE l.flag = 'abnormal'
+    GROUP BY a.subject_id
+)
+
+
+-- Final ML Dataset Join
+
+SELECT 
+    distinct ap.subject_id,
+
+    -- Demographics
+    d.gender,
+    d.anchor_age AS age,
+    d.age_group,
+    d.death_flag,
+
+    -- Admissions
+    ad.race,
+    ad.total_admissions,
+    ad.total_los_days,
+    ad.avg_los_days,
+
+    -- Labs & Meds
+    ISNULL(l.abnormal_lab_count, 0) AS abnormal_lab_count,
+    ISNULL(m.total_prescriptions, 0) AS total_prescriptions
+
+FROM asthma_patients ap
+LEFT JOIN demo d ON ap.subject_id = d.subject_id
+LEFT JOIN adm ad ON ap.subject_id = ad.subject_id
+LEFT JOIN abn_labs l ON ap.subject_id = l.subject_id
+LEFT JOIN meds m ON ap.subject_id = m.subject_id
+
+ORDER BY ap.subject_id;

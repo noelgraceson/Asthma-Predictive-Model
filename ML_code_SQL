@@ -101,3 +101,158 @@ LEFT JOIN abn_labs l ON ap.subject_id = l.subject_id
 LEFT JOIN meds m ON ap.subject_id = m.subject_id
 
 ORDER BY ap.subject_id;
+
+
+                                                       NHANES
+
+WITH dem AS (
+    SELECT 
+        Patient_ID,
+        Gender,
+        Age,
+        CASE
+            WHEN Age < 15 THEN 'Under 15'
+            WHEN Age BETWEEN 15 AND 30 THEN '15-30'
+            WHEN Age BETWEEN 30 AND 45 THEN '30-45'
+            WHEN Age BETWEEN 45 AND 60 THEN '45-60'
+            ELSE '60+'
+        END AS Age_Group,
+        Race,
+        Pregnancy_status,
+        Household,
+        Income_level
+    FROM project.dbo.NHANES_demographics
+),
+
+bp_chol AS (
+    SELECT
+        Patient_ID,
+        CASE WHEN BPQ030 = 1 THEN 'Yes'
+             WHEN BPQ030 = 2 THEN 'No' ELSE 'Invalid' END AS Blood_pressure,
+        CASE WHEN BPQ080 = 1 THEN 'Yes'
+             WHEN BPQ080 = 2 THEN 'No' ELSE 'Invalid' END AS Cholesterol
+    FROM project.dbo.NHANES_blood_pressure_cholestrol
+),
+
+bmi AS (
+    SELECT
+        Patient_ID,
+        ROUND(Weight_kg,1) AS Weight_kg,
+        ROUND(Height_cm,1) AS Height_cm,
+        ROUND((Weight_kg / POWER(Height_cm/100.0,2)),1) AS BMI
+    FROM project.dbo.NHANES_BMI
+),
+
+diabetes AS (
+    SELECT
+        Patient_ID,
+        CASE WHEN DIQ010 = 1 THEN 'Yes'
+             WHEN DIQ010 = 2 THEN 'No' ELSE 'Invalid' END AS Diabetes,
+        CASE WHEN DIQ050 = 1 THEN 'Yes'
+             WHEN DIQ050 = 2 THEN 'No' ELSE 'Invalid' END AS Taking_insulin,
+        CASE
+            WHEN DID060 BETWEEN 1 AND 60 THEN CONCAT(DID060,' months')
+            WHEN DID060 = 666 THEN '<1 month'
+            ELSE 'Invalid'
+        END AS Duration_insulin
+    FROM project.dbo.NHANES_diabetes
+),
+
+pesticides AS (
+    SELECT 
+        Patient_ID,
+        CASE WHEN PUQ100 = 1 THEN 'Yes'
+             WHEN PUQ100 = 2 THEN 'No' ELSE 'Invalid' END AS Home_pesticides,
+        CASE WHEN PUQ110 = 1 THEN 'Yes'
+             WHEN PUQ110 = 2 THEN 'No' ELSE 'Invalid' END AS Weed_pesticides
+    FROM project.dbo.NHANES_pesticide
+),
+
+physical AS (
+    SELECT
+        Patient_ID,
+        CASE 
+            WHEN PAD790U = 'D' THEN ROUND(TRY_CONVERT(FLOAT, PAD790Q) * 30.5,1)
+            WHEN PAD790U = 'W' THEN ROUND(TRY_CONVERT(FLOAT, PAD790Q) * 4.345,1)
+            WHEN PAD790U = 'M' THEN ROUND(TRY_CONVERT(FLOAT, PAD790Q),1)
+            WHEN PAD790U = 'Y' THEN ROUND(TRY_CONVERT(FLOAT, PAD790Q) / 12.0,1)
+            ELSE NULL
+        END AS Exercise_per_month
+    FROM project.dbo.NHANES_physical_activity
+),
+
+smoking AS (
+    SELECT 
+        Patient_ID,
+        CASE WHEN SMQ040 = 1 THEN 'Daily'
+             WHEN SMQ040 = 2 THEN 'Some days'
+             WHEN SMQ040 = 3 THEN 'No'
+             ELSE 'Invalid'
+        END AS Smoking_frequency,
+        CASE
+            WHEN SMD650 = 1 THEN '<1'
+            WHEN SMD650 BETWEEN 2 AND 5 THEN '2-5'
+            WHEN SMD650 BETWEEN 6 AND 96 THEN '>5'
+            ELSE 'Invalid'
+        END AS Cigarettes_per_day
+    FROM project.dbo.NHANES_smoking
+),
+
+meds AS (
+    SELECT
+        SEQN AS Patient_ID,
+        CASE WHEN MCQ010 = 1 THEN 'Yes'
+             WHEN MCQ010 = 2 THEN 'No' ELSE NULL END AS Had_asthma,
+        CASE WHEN MCQ035 = 1 THEN 'Yes'
+             WHEN MCQ035 = 2 THEN 'No' ELSE NULL END AS Still_asthma,
+        CASE WHEN MCQ040 = 1 THEN 'Yes'
+             WHEN MCQ040 = 2 THEN 'No' ELSE NULL END AS Asthma_attack_last_year,
+        CASE WHEN AGQ030 = 1 THEN 'Yes'
+             WHEN AGQ030 = 2 THEN 'No' ELSE NULL END AS ER_visit_past_year
+    FROM project.dbo.NHANES_medications
+)
+
+-- Final Table
+SELECT 
+    d.Patient_ID,
+    d.Gender,
+    d.Age,
+    d.Age_Group,
+    d.Race,
+    d.Pregnancy_status,
+    d.Household,
+    d.Income_level,
+
+    b.Blood_pressure,
+    b.Cholesterol,
+
+    bmi.Weight_kg,
+    bmi.Height_cm,
+    bmi.BMI,
+
+    diab.Diabetes,
+    diab.Taking_insulin,
+    diab.Duration_insulin,
+
+    pest.Home_pesticides,
+    pest.Weed_pesticides,
+
+    pa.Exercise_per_month,
+
+    sm.Smoking_frequency,
+    sm.Cigarettes_per_day,
+
+    m.Had_asthma,
+    m.Still_asthma,
+    m.Asthma_attack_last_year,
+    m.ER_visit_past_year
+
+FROM dem d
+LEFT JOIN bp_chol b ON d.Patient_ID = b.Patient_ID
+LEFT JOIN bmi ON d.Patient_ID = bmi.Patient_ID
+LEFT JOIN diabetes diab ON d.Patient_ID = diab.Patient_ID
+LEFT JOIN pesticides pest ON d.Patient_ID = pest.Patient_ID
+LEFT JOIN physical pa ON d.Patient_ID = pa.Patient_ID
+LEFT JOIN smoking sm ON d.Patient_ID = sm.Patient_ID
+LEFT JOIN meds m ON d.Patient_ID = m.Patient_ID
+ORDER BY d.Patient_ID;

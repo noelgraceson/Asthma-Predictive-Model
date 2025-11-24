@@ -86,3 +86,33 @@ y_pred_xgb = xgb.predict(X_test)
 print("XGB Accuracy:", accuracy_score(y_test, y_pred_xgb))
 print(classification_report(y_test, y_pred_xgb))
 
+# ROC AUC curve and ROC score
+from sklearn.metrics import roc_auc_score, roc_curve
+import matplotlib.pyplot as plt
+
+roc_auc = roc_auc_score(y_test, y_proba_rf)
+print("ROC-AUC:", roc_auc)
+
+fpr, tpr, thresholds = roc_curve(y_test, y_proba_rf)
+
+plt.figure(figsize=(7,5))
+plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {roc_auc:.3f})")
+plt.plot([0,1], [0,1], linestyle="--", color="grey")  # diagonal line
+plt.xlabel("False Positive Rate")
+plt.ylabel("Sensitivity")
+plt.title("ROC Curve - Random Forest")
+plt.legend()
+plt.show()
+
+#precision sensitivty scofre and curve
+from sklearn.metrics import precision_recall_curve, average_precision_score
+precision, recall, thresholds = precision_recall_curve(y_test, y_proba_rf)
+pr_auc = average_precision_score(y_test, y_proba_rf)
+print("Precision-Recall AUC:", pr_auc)
+plt.figure(figsize=(7,5))
+plt.plot(recall, precision, label=f"PR Curve (AUC = {pr_auc:.3f})")
+plt.xlabel("Sensitivity")
+plt.ylabel("Precision")
+plt.title("Precision, Sensitivity- Random Forest")
+plt.legend()
+plt.show()
